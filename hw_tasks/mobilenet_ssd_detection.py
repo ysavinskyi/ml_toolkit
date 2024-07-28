@@ -1,24 +1,20 @@
 import onnxruntime as rt
 import numpy as np
 import cv2
+import ast
 
 
 inference = rt.InferenceSession('../models/saved_models/ssd_mobilenet_v1_10.onnx')
 outputs = ["num_detections:0", "detection_boxes:0", "detection_scores:0", "detection_classes:0"]
-coco_classes = {
-    1: 'person',
-    2: 'bicycle',
-    3: 'car',
-    4: 'motorcycle',
-    5: 'airplane',
-    6: 'bus',
-    7: 'train',
-    8: 'truck',
-    9: 'boat',
-    10: 'traffic light',
-}
 
-cap = cv2.VideoCapture('../cv/video_source/road_sample2.mp4')
+filename = '../models/saved_models/coco_classes_map.txt'
+coco_classes = {}
+with open(filename, 'r') as file:
+    for index, line in enumerate(file):
+        coco_classes[index] = line.strip()
+
+# cap = cv2.VideoCapture('../cv/video_source/road_sample2.mp4')
+cap = cv2.VideoCapture(0)
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -40,7 +36,9 @@ while cap.isOpened():
 
             label = int(detection_classes[0][i])
             confidence = detection_scores[0][i]
-            text = f'Class {coco_classes[label]}: {confidence:.2f}%'
+            obj_class = coco_classes[label] if label <= len(coco_classes) else 'Unknown'
+
+            text = f'Class {obj_class}: {confidence:.2f}%'
             cv2.putText(frame, text, (x_min, y_min - 10),
                         cv2.FONT_HERSHEY_TRIPLEX,
                         fontScale=0.5,
